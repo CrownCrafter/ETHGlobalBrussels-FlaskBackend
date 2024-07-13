@@ -14,8 +14,9 @@ from flask import request
 from flask_cors import cross_origin
 from gql import Client, gql
 from gql.transport.aiohttp import AIOHTTPTransport
-
+from pandasql import sqldf
 app = Flask(__name__)
+
 CORS(app, resources=r'/api/*')
 
 app.config['CORS_HEADERS'] = 'Content-Type'
@@ -166,8 +167,11 @@ def knn(url:str, feature_x:str, feature_y:str):
 # THE GRAPH FUNCTION, gets 5 
 @app.route("/api/graph")
 def the_graph():
+
     swaps = the_graph_access()
-    return jsonify(swaps.describe().to_dict())
+    query = request.args.get('query')
+    pysqldf = lambda q: sqldf(q, globals())
+    return jsonify(pysqldf(query))
 
 def the_graph_access():
     
@@ -252,7 +256,7 @@ def the_graph_access():
     # create a pandas dataframe from the result
     swaps_df = pd.DataFrame(result["swaps"])
     # print the first 5 latest swaps of uniswap v3
-    return swaps_df.head()
+    return swaps_df
 
 
 @app.route("/api/vis")
