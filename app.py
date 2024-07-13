@@ -165,7 +165,7 @@ def knn(url:str, feature_x:str, feature_y:str):
 
 # THE GRAPH FUNCTION, gets 5 
 @app.route("/api/graph")
-async def the_graph():
+def the_graph():
     swaps = the_graph_access()
     return jsonify(swaps.describe().to_dict())
 
