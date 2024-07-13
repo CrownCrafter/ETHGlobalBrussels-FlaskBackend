@@ -17,6 +17,7 @@ from gql.transport.aiohttp import AIOHTTPTransport
 from pandasql import sqldf
 app = Flask(__name__)
 
+pysqldf = lambda q: sqldf(q, globals())
 CORS(app, resources=r'/api/*')
 
 app.config['CORS_HEADERS'] = 'Content-Type'
@@ -167,11 +168,11 @@ def knn(url:str, feature_x:str, feature_y:str):
 # THE GRAPH FUNCTION, gets 5 
 @app.route("/api/graph")
 def the_graph():
+    swaps_df = the_graph_access()
+    swaps_df = swaps_df.astype({"amountUSD":float, "timestamp":int})
 
-    swaps = the_graph_access()
-    query = request.args.get('query')
-    pysqldf = lambda q: sqldf(q, globals())
-    return jsonify(pysqldf(query))
+    return jsonify(swaps_df.query('amountUSD > 0').to_dict())
+    # return swaps_df.to_dict()
 
 def the_graph_access():
     
@@ -254,7 +255,7 @@ def the_graph_access():
     result = client.execute(query)
     # print(result)
     # create a pandas dataframe from the result
-    swaps_df = pd.DataFrame(result["swaps"])
+    swaps_df = pd.DataFrame(result["swaps"], )
     # print the first 5 latest swaps of uniswap v3
     return swaps_df
 
