@@ -12,6 +12,9 @@ from flask import send_file
 from sklearn.decomposition import PCA
 from flask import request
 from flask_cors import cross_origin
+from gql import Client, gql
+from gql.transport.aiohttp import AIOHTTPTransport
+
 app = Flask(__name__)
 CORS(app, resources=r'/api/*')
 
@@ -159,11 +162,102 @@ def knn(url:str, feature_x:str, feature_y:str):
             'kmeans_plot': kmeans_plot
         }])
 
+# THE GRAPH FUNCTION, gets 5 
+@app.route("/api/graph")
+async def the_graph():
+    swaps = the_graph_access()
+    return jsonify(swaps.describe().to_dict())
+
+def the_graph_access():
+    
+    # Create a transport instance
+    transport = AIOHTTPTransport(
+        url="https://gateway-arbitrum.network.thegraph.com/api/c6e4f87e7381de5513ae5ecfa70df065/subgraphs/id/5zvR82QoaXYFyDEKLZ9t6v9adgnptxYpKpSbxtgVENFV",
+        timeout=30,  # Increase the timeout value if needed
+    )
+
+    # Create a client instance
+    client = Client(
+        transport=transport,
+        fetch_schema_from_transport=True,
+    )
+
+    # Define the GraphQL query
+    query = gql(
+        """
+        query {
+            pools(first: 10, orderBy: volumeUSD, orderDirection: desc) {
+                id
+                token0 {
+                    id
+                    symbol
+                    name
+                    decimals
+                }
+                token1 {
+                    id
+                    symbol
+                    name
+                    decimals
+                }
+                feeTier
+                liquidity
+                sqrtPrice
+                tick
+                volumeUSD
+                volumeToken0
+                volumeToken1
+                txCount
+            }
+            tokens(first: 10, orderBy: volumeUSD, orderDirection: desc) {
+                id
+                symbol
+                name
+                decimals
+                volume
+                volumeUSD
+                txCount
+                whitelistPools {
+                    id
+                }
+            }
+            swaps(first: 10, orderBy: timestamp, orderDirection: desc) {
+                id
+                timestamp
+                pool {
+                    id
+                }
+                token0 {
+                    id
+                    symbol
+                }
+                token1 {
+                    id
+                    symbol
+                }
+                sender
+                recipient
+                amount0
+                amount1
+                amountUSD
+            }
+        }
+        """
+    )
+
+    # Execute the query
+    result = client.execute(query)
+    # print(result)
+    # create a pandas dataframe from the result
+    swaps_df = pd.DataFrame(result["swaps"])
+    # print the first 5 latest swaps of uniswap v3
+    return swaps_df.head()
+
+
 @app.route("/api/vis")
 def vis():
     return ""
 
 if __name__ == '__main__':
     app.run(debug=True)
-
 
