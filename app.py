@@ -171,7 +171,8 @@ def the_graph():
     swaps_df = the_graph_access()
     swaps_df = swaps_df.astype({"amountUSD":float, "timestamp":int})
 
-    return jsonify(swaps_df.query('amountUSD > 0').to_dict())
+    # return jsonify(swaps_df.query('amountUSD > 0').to_dict())
+    return jsonify(swaps_df.query(request.args.get('query')).to_dict())
     # return swaps_df.to_dict()
 
 def the_graph_access():
