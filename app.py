@@ -86,9 +86,10 @@ async def basic_data_corr():
         img = io.BytesIO()
         plt.savefig(img, format='png')
         img.seek(0)
-        correlation_matrix = base64.b64encode(img.getvalue()).decode('utf-8')
+        # correlation_matrix = base64.b64encode(img.getvalue()).decode('utf-8')
         plt.close()
-        return jsonify({"image":correlation_matrix})
+        return send_file(img, mimetype='image/png')
+        # return jsonify({"image":correlation_matrix})
 
 
 @app.route('/api/pca')
@@ -259,5 +260,5 @@ def vis():
     return ""
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True, host = '0.0.0.0', port = 3005)
 
