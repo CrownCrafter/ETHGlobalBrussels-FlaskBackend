@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import io
 import base64
+from flask import send_file
 from sklearn.decomposition import PCA
 from flask import request
 from flask_cors import cross_origin
@@ -68,9 +69,28 @@ async def basic_data():
             # 'histograms': histograms,
             # 'correlation_matrix': correlation_matrix
         })
+@app.route('/api/basic_data_corr')
+async def basic_data_corr():
+    with urlopen('https://gateway.lighthouse.storage/ipfs/' + request.args.get('cid')) as f: # Download File
+
+        df = pd.read_csv(f)
+         # # Correlation Matrix
+        plt.figure(figsize=(10, 8))
+        corr = df.corr()
+        sns.heatmap(corr, annot=True, fmt='.2f', cmap='coolwarm', vmin=-1, vmax=1)
+        plt.title('Correlation Matrix')
+
+        img = io.BytesIO()
+        plt.savefig(img, format='png')
+        img.seek(0)
+        correlation_matrix = base64.b64encode(img.getvalue()).decode('utf-8')
+        plt.close()
+        return jsonify({"image":correlation_matrix})
+
 
 @app.route('/api/pca')
 async def pca():
+
     """
     Perform PCA on the provided dataset to determine feature importance.
 
@@ -117,7 +137,7 @@ def knn(url:str, feature_x:str, feature_y:str):
 
     with urlopen(url,) as f: # Download File
         n_clusters = 3
-        df = pd.DataFrame(f)
+        df = pd.read_csv(f)
         selected_features = df[[feature_x, feature_y]]
 
         kmeans = KMeans(n_clusters=n_clusters)
@@ -132,12 +152,12 @@ def knn(url:str, feature_x:str, feature_y:str):
         img = io.BytesIO()
         plt.savefig(img, format='png')
         img.seek(0)
-        kmeans_plot = base64.b64encode(img.getvalue()).decode()
+        kmeans_plot = base64.b64encode(img.getvalue()).decode('utf-8')
         plt.close()
 
-        return [{
+        return jsonify([{
             'kmeans_plot': kmeans_plot
-        }]
+        }])
 
 @app.route("/api/vis")
 def vis():
